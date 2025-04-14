@@ -102,11 +102,11 @@ class KNearestNeighbor(object):
             #######################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            # Subtract i-th test point from ALL training points (broadcasting)
+            # Вычтите i-ю тестовую точку из ВСЕХ тренировочных точек
             differences = self.X_train - X[i]
-            # Square differences element-wise
+            # Разность квадратов по элементам
             squared_diff = differences ** 2
-            # Sum along feature dimension and take sqrt
+            # Суммируем по измерению объекта и получаем расстояния
             dists[i, :] = np.sqrt(np.sum(squared_diff, axis=1))
             self.dists = dists
 

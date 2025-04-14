@@ -31,9 +31,24 @@ def softmax_loss_naive(W, X, y, reg):
     # here, it is easy to run into numeric instability. Don't forget the        #
     # regularization!                                                           #
     #############################################################################
-    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE) *****
+    
+    num_train = X.shape[0]
+    num_classes = W.shape[1]
+    
+    for i in range(num_train):
+        scores = X[i].dot(W)
+        scores -= np.max(scores)
+        exp_scores = np.exp(scores)
+        probs = exp_scores / np.sum(exp_scores)
+        loss += -np.log(probs[y[i]])
 
-    pass
+        for j in range(num_classes):
+            dW[:, j] += (probs[j] - (j == y[i])) * X[i]
+
+    # Усреднение и регуляризация
+    loss = loss / num_train + reg * np.sum(W * W)
+    dW = dW / num_train + 2 * reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -56,10 +71,24 @@ def softmax_loss_vectorized(W, X, y, reg):
     # here, it is easy to run into numeric instability. Don't forget the        #
     # regularization!                                                           #
     #############################################################################
-    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE) *****
 
-    pass
+    num_train = X.shape[0]
 
-    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    scores = X.dot(W)
+    scores -= np.max(scores, axis=1, keepdims=True)
+    exp_scores = np.exp(scores)
+    probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+
+    correct_logprobs = -np.log(probs[np.arange(num_train), y])
+    data_loss = np.sum(correct_logprobs) / num_train
+    reg_loss = reg * np.sum(W * W) 
+    loss = data_loss + reg_loss
+
+    dscores = probs.copy()
+    dscores[np.arange(num_train), y] -= 1
+    dW = X.T.dot(dscores) / num_train + 2 * reg * W 
+
+    # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE) *****
 
     return loss, dW
