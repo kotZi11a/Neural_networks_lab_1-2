@@ -4,7 +4,7 @@ from builtins import range
 from builtins import object
 import numpy as np
 import matplotlib.pyplot as plt
-from past.builtins import xrange
+#from past.builtins import xrange
 
 class TwoLayerNet(object):
     """
@@ -80,7 +80,9 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        h1 = X.dot(W1) + b1  # Первый полносвязный слой
+        a1 = np.maximum(0, h1)  # ReLU активация
+        scores = a1.dot(W2) + b2  # Выходные scores
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -98,7 +100,16 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # Softmax с стабилизацией (вычитание максимума для численной устойчивости)
+        exp_scores = np.exp(scores - np.max(scores, axis=1, keepdims=True))
+        probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+
+        # Потери: кросс-энтропия
+        correct_log_probs = -np.log(probs[np.arange(N), y])
+        data_loss = np.sum(correct_log_probs) / N
+        reg_loss = 0.5 * reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
+        loss = data_loss + reg_loss
+
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -111,7 +122,22 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # Градиент по scores (dL/dscores)
+        dscores = probs.copy()
+        dscores[np.arange(N), y] -= 1
+        dscores /= N
+
+        # Градиенты второго слоя
+        grads['W2'] = a1.T.dot(dscores) + reg * W2
+        grads['b2'] = np.sum(dscores, axis=0)
+
+        # Градиент через ReLU
+        da1 = dscores.dot(W2.T)
+        dh1 = da1 * (h1 > 0)  # Маска ReLU
+
+        # Градиенты первого слоя
+        grads['W1'] = X.T.dot(dh1) + reg * W1
+        grads['b1'] = np.sum(dh1, axis=0)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -156,7 +182,9 @@ class TwoLayerNet(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            indices = np.random.choice(num_train, batch_size, replace=True)
+            X_batch = X[indices].reshape(batch_size, -1)  # Преобразуем в 2D
+            y_batch = y[indices]
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -172,7 +200,8 @@ class TwoLayerNet(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            for param in self.params:
+                self.params[param] -= learning_rate * grads[param]
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -218,7 +247,14 @@ class TwoLayerNet(object):
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # Преобразование входных данных в 2D
+        X_flat = X.reshape(X.shape[0], -1)  # (N, D), где D = 32*32*3 = 3072
+
+        # Вычисление scores
+        h1 = X_flat.dot(self.params['W1']) + self.params['b1']
+        a1 = np.maximum(0, h1)
+        scores = a1.dot(self.params['W2']) + self.params['b2']
+        y_pred = np.argmax(scores, axis=1)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
